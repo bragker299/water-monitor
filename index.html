@@ -172,6 +172,8 @@
     // ----------------------------------------------------
     const sensorRef = database.ref('sensor_data').limitToLast(20);
 
+    const sensorRef = database.ref('sensor_data').limitToLast(20);
+
     sensorRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
@@ -185,11 +187,12 @@
         
         let timeStr = "";
         if (latestData.timestamp) {
+          // 有 timestamp 就轉做精確時間
           const d = new Date(latestData.timestamp);
           timeStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
         } else {
-          const now = new Date();
-          timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+          // 舊數據顯示 --:-- 避免時間全部重複
+          timeStr = "--:--";
         }
 
         times.push(timeStr);
@@ -201,8 +204,15 @@
         document.getElementById('temperature').innerText = `${latestData.temperature_c || 0} °C`;
         document.getElementById('batteryVolts').innerText = `${latestData.battery_v || 0} V`;
         
-        const nowStr = new Date().toLocaleString('zh-HK', { hour12: false });
-        document.getElementById('updateTime').innerText = nowStr;
+        // 顯示 ESP32 數據真實寫入的時間
+        let updateTimeStr = "--";
+        if (latestData.timestamp) {
+            const d = new Date(latestData.timestamp);
+            updateTimeStr = d.toLocaleString('zh-HK', { hour12: false });
+        } else {
+            updateTimeStr = new Date().toLocaleString('zh-HK', { hour12: false });
+        }
+        document.getElementById('updateTime').innerText = updateTimeStr;
       }
 
       waterChart.data.labels = times;
