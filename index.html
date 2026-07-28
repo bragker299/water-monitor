@@ -10,111 +10,189 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      background-color: #0d0d0d;
+      background-color: #0b0e14;
       color: #ffffff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
-      padding: 16px;
-      max-width: 500px;
+      padding: 20px;
+    }
+
+    /* 主容器：上限 1100px 居中，電腦同手機睇都唔會過寬或過窄 */
+    .app-container {
+      max-width: 1100px;
       margin: 0 auto;
     }
-    .card {
-      background-color: #1a1a1a;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-      border: 1px solid #262626;
-    }
+
+    /* 連線狀態列 */
     .status-badge {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       background-color: #052e16;
       border: 1px solid #15803d;
       color: #22c55e;
-      padding: 10px 14px;
-      border-radius: 8px;
+      padding: 12px 18px;
+      border-radius: 10px;
       font-size: 0.9rem;
       font-weight: bold;
       margin-bottom: 20px;
     }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+    }
+
     .status-dot {
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
       background-color: #22c55e;
       border-radius: 50%;
       margin-right: 10px;
-      box-shadow: 0 0 8px #22c55e;
+      box-shadow: 0 0 10px #22c55e;
     }
+
+    /* 網格系統：預設單欄 (手機) */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    /* 電腦 / 平板螢幕 (寬度 >= 768px)：自動轉為雙欄 */
+    @media (min-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 320px 1fr;
+      }
+    }
+
+    /* 卡片通用樣式 */
+    .card {
+      background-color: #161b22;
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid #21262d;
+    }
+
+    .metrics-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
     .label {
-      color: #888;
-      font-size: 0.8rem;
-      letter-spacing: 1px;
+      color: #8b949e;
+      font-size: 0.75rem;
+      letter-spacing: 1.2px;
       text-transform: uppercase;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+      font-weight: 600;
     }
+
     .value-water {
-      font-size: 3.2rem;
+      font-size: 3.5rem;
       font-weight: 800;
       color: #00ff66;
-      line-height: 1.1;
+      line-height: 1;
     }
+
     .value-water span {
       font-size: 1.2rem;
-      font-weight: 400;
+      font-weight: 500;
       color: #00ff66;
     }
+
     .value-temp {
-      font-size: 2.2rem;
+      font-size: 2.4rem;
       font-weight: 700;
       color: #00e5ff;
+      line-height: 1.1;
     }
+
     .meta-info {
-      color: #666;
+      color: #8b949e;
       font-size: 0.85rem;
-      margin-top: 16px;
-      border-top: 1px solid #222;
-      padding-top: 12px;
-      line-height: 1.6;
+      line-height: 1.7;
+      border-top: 1px solid #21262d;
+      padding-top: 14px;
+      margin-top: 6px;
     }
+
+    .meta-info span {
+      color: #e6edf3;
+      font-weight: 500;
+    }
+
+    /* 圖表卡片區 */
+    .chart-card {
+      display: flex;
+      flex-direction: column;
+    }
+
     .chart-container {
       position: relative;
-      height: 220px;
+      flex-grow: 1;
+      min-height: 320px;
       width: 100%;
     }
   </style>
 </head>
 <body>
 
-  <!-- 連線狀態欄 -->
-  <div class="status-badge">
-    <div class="status-dot"></div>
-    <span>已連接至 Firebase</span>
-  </div>
-
-  <!-- 水位數據 -->
-  <div class="label">REAL-TIME WATER LEVEL</div>
-  <div class="value-water" id="waterLevel">0 <span>mm</span></div>
-
-  <br>
-
-  <!-- 溫度數據 -->
-  <div class="label">TEMPERATURE</div>
-  <div class="value-temp" id="temperature">0.0 °C</div>
-
-  <div class="meta-info">
-    最後更新：<span id="updateTime" style="color:#eee;">--</span><br>
-    設備電壓：<span id="batteryVolts" style="color:#eee;">0.00 V</span>
-  </div>
-
-  <br>
-
-  <!-- 圖表卡片 -->
-  <div class="card">
-    <div class="label" style="margin-bottom:12px;">水位歷史趨勢</div>
-    <div class="chart-container">
-      <canvas id="waterChart"></canvas>
+  <div class="app-container">
+    
+    <!-- 頂部連線狀態列 -->
+    <div class="status-badge">
+      <div class="status-left">
+        <div class="status-dot"></div>
+        <span>已連接至 Firebase</span>
+      </div>
     </div>
+
+    <!-- 儀表板主要內容區 -->
+    <div class="dashboard-grid">
+      
+      <!-- 左側/上方：數據指標卡片群 -->
+      <div class="metrics-group">
+        
+        <!-- 水位卡片 -->
+        <div class="card">
+          <div class="label">REAL-TIME WATER LEVEL</div>
+          <div class="value-water" id="waterLevel">0 <span>mm</span></div>
+        </div>
+
+        <!-- 溫度卡片 -->
+        <div class="card">
+          <div class="label">TEMPERATURE</div>
+          <div class="value-temp" id="temperature">0.0 °C</div>
+        </div>
+
+        <!-- 設備狀態資訊卡片 -->
+        <div class="card">
+          <div class="label" style="margin-bottom: 10px;">SYSTEM META</div>
+          <div class="meta-info">
+            最後更新：<span id="updateTime">--</span><br>
+            設備電壓：<span id="batteryVolts">0.00 V</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 右側/下方：歷史趨勢圖表 -->
+      <div class="card chart-card">
+        <div class="label" style="margin-bottom: 16px;">水位歷史趨勢</div>
+        <div class="chart-container">
+          <canvas id="waterChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 
   <script>
@@ -137,7 +215,7 @@
           label: '水位 (mm)',
           data: [],
           borderColor: '#00ff66',
-          backgroundColor: 'rgba(0, 255, 102, 0.15)',
+          backgroundColor: 'rgba(0, 255, 102, 0.12)',
           borderWidth: 2,
           fill: true,
           tension: 0.35,
@@ -150,12 +228,17 @@
         maintainAspectRatio: false,
         scales: {
           x: { 
-            grid: { color: '#222' }, 
-            ticks: { color: '#666', font: { size: 10 }, maxRotation: 45 } 
+            grid: { color: '#21262d' }, 
+            ticks: { 
+              color: '#8b949e', 
+              font: { size: 10 }, 
+              maxRotation: 45,
+              maxTicksLimit: 8 // 自動限制 X 軸時間標籤數量，避免字疊埋一齊
+            } 
           },
           y: { 
-            grid: { color: '#222' }, 
-            ticks: { color: '#666', font: { size: 10 } },
+            grid: { color: '#21262d' }, 
+            ticks: { color: '#8b949e', font: { size: 10 } },
             beginAtZero: true
           }
         },
