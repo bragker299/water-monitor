@@ -118,9 +118,7 @@
   </div>
 
   <script>
-    // ----------------------------------------------------
-    // ⚠️ 請修改下面這行：填入你的 Firebase Realtime Database URL
-    // ----------------------------------------------------
+    // Firebase 設定
     const firebaseConfig = {
       databaseURL: "https://esp32-water-monitor-ceafc-default-rtdb.asia-southeast1.firebasedatabase.app/"
     };
@@ -167,11 +165,7 @@
       }
     });
 
-    // ----------------------------------------------------
     // 監聽 Firebase 'sensor_data'（擷取最新 20 筆歷史紀錄）
-    // ----------------------------------------------------
-    const sensorRef = database.ref('sensor_data').limitToLast(20);
-
     const sensorRef = database.ref('sensor_data').limitToLast(20);
 
     sensorRef.on('value', (snapshot) => {
@@ -185,14 +179,10 @@
       Object.keys(data).forEach((key) => {
         latestData = data[key];
         
-        let timeStr = "";
+        let timeStr = "--:--";
         if (latestData.timestamp) {
-          // 有 timestamp 就轉做精確時間
           const d = new Date(latestData.timestamp);
           timeStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
-        } else {
-          // 舊數據顯示 --:-- 避免時間全部重複
-          timeStr = "--:--";
         }
 
         times.push(timeStr);
@@ -204,13 +194,12 @@
         document.getElementById('temperature').innerText = `${latestData.temperature_c || 0} °C`;
         document.getElementById('batteryVolts').innerText = `${latestData.battery_v || 0} V`;
         
-        // 顯示 ESP32 數據真實寫入的時間
         let updateTimeStr = "--";
         if (latestData.timestamp) {
-            const d = new Date(latestData.timestamp);
-            updateTimeStr = d.toLocaleString('zh-HK', { hour12: false });
+          const d = new Date(latestData.timestamp);
+          updateTimeStr = d.toLocaleString('zh-HK', { hour12: false });
         } else {
-            updateTimeStr = new Date().toLocaleString('zh-HK', { hour12: false });
+          updateTimeStr = new Date().toLocaleString('zh-HK', { hour12: false });
         }
         document.getElementById('updateTime').innerText = updateTimeStr;
       }
